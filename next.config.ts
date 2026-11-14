@@ -1,4 +1,19 @@
 import type { NextConfig } from "next";
+import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
+
+// Gives `next dev` access to the R2 bindings declared in wrangler.jsonc.
+initOpenNextCloudflareForDev();
+
+/** Remote image hosts for uploaded photographs. */
+function r2ImageHosts() {
+  const url = process.env.R2_PUBLIC_URL;
+  if (!url) return [];
+  try {
+    return [{ protocol: "https" as const, hostname: new URL(url).hostname }];
+  } catch {
+    return [];
+  }
+}
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
@@ -11,6 +26,11 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "*.public.blob.vercel-storage.com",
       },
+      {
+        protocol: "https",
+        hostname: "*.r2.dev",
+      },
+      ...r2ImageHosts(),
     ],
   },
   async headers() {

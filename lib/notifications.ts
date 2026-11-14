@@ -3,6 +3,7 @@ import path from "node:path";
 import type { AshramEvent } from "@/lib/events";
 import { formatEventDateRange } from "@/lib/events";
 import { getMembers, type Member } from "@/lib/members";
+import { isCloudflareRuntime } from "@/lib/storage";
 import { maskPhone, normalizePhone } from "@/lib/phone";
 import { site } from "@/lib/site";
 
@@ -70,6 +71,12 @@ export function messagingProviderLabel(): string {
 }
 
 async function logNotification(payload: Record<string, unknown>) {
+  // Workers only has an ephemeral filesystem, so send this to the log stream.
+  if (isCloudflareRuntime()) {
+    console.info("Notifications:", JSON.stringify(payload));
+    return;
+  }
+
   try {
     await mkdir(path.dirname(NOTIFICATION_LOG), { recursive: true });
     await appendFile(

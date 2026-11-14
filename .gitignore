@@ -40,6 +40,11 @@ _scratch/
 .cloud-attachments/
 .freebuff/
 
+# Cloudflare build output and local secrets
+.open-next/
+.wrangler/
+.dev.vars
+
 # TypeScript
 *.tsbuildinfo
 
