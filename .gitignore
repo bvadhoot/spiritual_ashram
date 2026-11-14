@@ -59,3 +59,6 @@ _scratch/
 
 # Client documents kept out of the code repository
 *.docx
+
+# Local admin credentials (never commit)
+.admin-credentials.local
