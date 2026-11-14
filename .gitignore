@@ -51,3 +51,6 @@ _scratch/
 
 # Microsoft Word lock files
 ~$*
+
+# Client documents kept out of the code repository
+*.docx
