@@ -1,17 +1,14 @@
-import { appendFile, mkdir } from "node:fs/promises";
-import path from "node:path";
 import { NextResponse } from "next/server";
 import { validateContact, validateHoneypot } from "@/lib/validation";
 import { clientIp, isSameOrigin, rateLimit } from "@/lib/rate-limit";
 import { createReference } from "@/lib/utils";
 import { site } from "@/lib/site";
+import { saveSubmission } from "@/lib/storage";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const MAX_BODY_BYTES = 24_000;
-const DATA_DIR = path.join(process.cwd(), "data");
-const FILE_PATH = path.join(DATA_DIR, "contact-submissions.ndjson");
 
 export async function POST(request: Request) {
   if (!isSameOrigin(request)) {
@@ -77,14 +74,7 @@ export async function POST(request: Request) {
     ...validation.data,
   };
 
-  let stored = false;
-  try {
-    await mkdir(DATA_DIR, { recursive: true });
-    await appendFile(FILE_PATH, `${JSON.stringify(entry)}\n`, "utf8");
-    stored = true;
-  } catch (error) {
-    console.error("Contact form: local storage failed", error);
-  }
+  const stored = await saveSubmission("contact", entry);
 
   let delivered = false;
   const webhook = process.env.CONTACT_WEBHOOK_URL;

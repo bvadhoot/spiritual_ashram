@@ -1,5 +1,3 @@
-import { appendFile, mkdir } from "node:fs/promises";
-import path from "node:path";
 import { NextResponse } from "next/server";
 import { validateDonation, validateHoneypot } from "@/lib/validation";
 import { clientIp, isSameOrigin, rateLimit } from "@/lib/rate-limit";
@@ -7,13 +5,12 @@ import { createReference } from "@/lib/utils";
 import { site } from "@/lib/site";
 import { sendDonationReceipt } from "@/lib/notifications";
 import { upsertMember } from "@/lib/members";
+import { saveSubmission } from "@/lib/storage";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const MAX_BODY_BYTES = 16_000;
-const DATA_DIR = path.join(process.cwd(), "data");
-const FILE_PATH = path.join(DATA_DIR, "donation-intents.ndjson");
 
 export async function POST(request: Request) {
   if (!isSameOrigin(request)) {
@@ -82,14 +79,7 @@ export async function POST(request: Request) {
     ...gift,
   };
 
-  let stored = false;
-  try {
-    await mkdir(DATA_DIR, { recursive: true });
-    await appendFile(FILE_PATH, `${JSON.stringify(entry)}\n`, "utf8");
-    stored = true;
-  } catch (error) {
-    console.error("Donation request: local storage failed", error);
-  }
+  const stored = await saveSubmission("donation", entry);
 
   let delivered = false;
   const webhook =

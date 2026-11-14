@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { appendFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 const BLOB_TOKEN = process.env.BLOB_READ_WRITE_TOKEN;
@@ -45,31 +45,43 @@ export function isCloudflareRuntime(): boolean {
 let dataBucket: R2BucketLike | null = null;
 let mediaBucket: R2BucketLike | null = null;
 
-async function resolveBinding(name: string): Promise<R2BucketLike | null> {
-  try {
-    const { getCloudflareContext } = await import("@opennextjs/cloudflare");
-    const context = await getCloudflareContext({ async: true });
-    const env = context?.env as Record<string, unknown> | undefined;
-    const binding = env?.[name];
-    return (binding as R2BucketLike | undefined) ?? null;
-  } catch {
-    // Not running on Workers, or the binding is not configured yet.
-    return null;
+let bindingProbe: Promise<Record<string, unknown> | null> | null = null;
+
+/**
+ * Resolves the Worker environment once per isolate. Off Cloudflare this probe
+ * throws, so the failed result is cached too: otherwise every single storage
+ * read on Vercel would re-attempt the import and pay for the exception.
+ */
+function cloudflareEnv(): Promise<Record<string, unknown> | null> {
+  if (!bindingProbe) {
+    bindingProbe = (async () => {
+      try {
+        const { getCloudflareContext } = await import("@opennextjs/cloudflare");
+        const context = await getCloudflareContext({ async: true });
+        return (context?.env as Record<string, unknown>) ?? null;
+      } catch {
+        // Not running on Workers, or the binding is not configured yet.
+        return null;
+      }
+    })();
   }
+  return bindingProbe;
+}
+
+async function resolveBinding(name: string): Promise<R2BucketLike | null> {
+  const env = await cloudflareEnv();
+  const binding = env?.[name];
+  return (binding as R2BucketLike | undefined) ?? null;
 }
 
 async function dataStore(): Promise<R2BucketLike | null> {
-  if (dataBucket) return dataBucket;
-  const found = await resolveBinding(DATA_BINDING);
-  if (found) dataBucket = found;
-  return found;
+  if (!dataBucket) dataBucket = await resolveBinding(DATA_BINDING);
+  return dataBucket;
 }
 
 async function mediaStore(): Promise<R2BucketLike | null> {
-  if (mediaBucket) return mediaBucket;
-  const found = await resolveBinding(MEDIA_BINDING);
-  if (found) mediaBucket = found;
-  return found;
+  if (!mediaBucket) mediaBucket = await resolveBinding(MEDIA_BINDING);
+  return mediaBucket;
 }
 
 function localPath(filename: string, scope: LocalScope): string {
@@ -335,4 +347,65 @@ export async function saveUpload(file: File, filename: string): Promise<string> 
     Buffer.from(await file.arrayBuffer()),
   );
   return `/uploads/${filename}`;
+}
+
+export type SubmissionKind = "contact" | "book-order" | "donation";
+
+const SUBMISSION_FILES: Record<SubmissionKind, string> = {
+  contact: "contact-submissions.ndjson",
+  "book-order": "book-orders.ndjson",
+  donation: "donation-intents.ndjson",
+};
+
+/**
+ * Persists a form submission. Each entry becomes its own R2 object so two
+ * visitors submitting at once cannot overwrite each other, which a
+ * read-modify-write log would allow. Returns false when nothing durable was
+ * written, so the caller can fall back to a webhook or report the failure
+ * instead of telling the visitor their message was received.
+ */
+export async function saveSubmission(
+  kind: SubmissionKind,
+  entry: Record<string, unknown>,
+): Promise<boolean> {
+  const bucket = await dataStore();
+
+  if (bucket) {
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const reference =
+      typeof entry.reference === "string" ? entry.reference : "entry";
+    try {
+      await bucket.put(
+        `${PRIVATE_PREFIX}/submissions/${kind}/${stamp}-${reference}.json`,
+        JSON.stringify(entry, null, 2),
+        {
+          httpMetadata: {
+            contentType: "application/json",
+            cacheControl: "no-store",
+          },
+        },
+      );
+      return true;
+    } catch (error) {
+      console.error(`Storage: could not save ${kind} submission`, error);
+      return false;
+    }
+  }
+
+  // Workers only has an ephemeral filesystem: writing would lose the record.
+  if (isEphemeralRuntime()) return false;
+
+  try {
+    const directory = path.join(process.cwd(), "data");
+    await mkdir(directory, { recursive: true });
+    await appendFile(
+      path.join(directory, SUBMISSION_FILES[kind]),
+      `${JSON.stringify(entry)}\n`,
+      "utf8",
+    );
+    return true;
+  } catch (error) {
+    console.error(`Storage: could not save ${kind} submission`, error);
+    return false;
+  }
 }
