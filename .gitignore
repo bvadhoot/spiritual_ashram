@@ -1,0 +1,53 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Next.js
+.next/
+out/
+build/
+next-env.d.ts
+
+# Environment
+.env
+.env*.local
+.env.production
+
+# Local data written by the contact and donation APIs
+data/*.ndjson
+data/*.json
+!data/.gitkeep
+
+# Admin uploads and the private opted-in member list
+public/uploads/*
+!public/uploads/.gitkeep
+data/private/
+
+# Logs and OS files
+*.log
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Scratch / temporary assets
+_scratch/
+
+# Tool artifacts
+.cloud-attachments/
+.freebuff/
+
+# TypeScript
+*.tsbuildinfo
+
+# Local exports
+*.ics
+
+# Large review packages handed to the client out-of-band
+/*.zip
+
+# Microsoft Word lock files
+~$*

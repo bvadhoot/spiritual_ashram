@@ -1,0 +1,28 @@
+Sri Basavalinga Avadhoota Ashram — website design review
+=========================================================
+
+Open index.html in any browser (Chrome, Safari, Edge, Firefox).
+No internet connection or server is needed — every page, font and photo
+is embedded in the files.
+
+Pages included:
+  index.html      Home
+  about.html      About Guru
+  ashram.html     The Ashram
+  teachings.html  Teachings
+  gallery.html    Gallery (category filters + full-screen photo viewer)
+  events.html     Events
+  contact.html    Contact
+  donate.html     Donate
+  privacy.html    Privacy
+
+Working in this review copy: page-to-page navigation, mobile menu, photo
+viewer (arrow keys / on-screen arrows / Esc), gallery category filters,
+donation amount selection.
+
+Not active here: form submission and the payment gateway. Those run on the
+live site; in this copy the forms simply show a note. This is a design
+review build, not the deployed website.
+
+Content shown (events, photographs, quotes, phone numbers) is from the
+current site content and can be updated before launch.
