@@ -3,7 +3,7 @@ import { validateDonation, validateHoneypot } from "@/lib/validation";
 import { clientIp, isSameOrigin, rateLimit } from "@/lib/rate-limit";
 import { createReference } from "@/lib/utils";
 import { site } from "@/lib/site";
-import { sendDonationReceipt } from "@/lib/notifications";
+import { notifySubmission, sendDonationReceipt } from "@/lib/notifications";
 import { upsertMember } from "@/lib/members";
 import { saveSubmission } from "@/lib/storage";
 
@@ -81,30 +81,8 @@ export async function POST(request: Request) {
 
   const stored = await saveSubmission("donation", entry);
 
-  let delivered = false;
-  const webhook =
-    process.env.DONATION_WEBHOOK_URL ?? process.env.CONTACT_WEBHOOK_URL;
-  if (webhook) {
-    try {
-      const response = await fetch(webhook, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          source: site.shortName,
-          type: "donation-intent",
-          ...entry,
-        }),
-        signal: AbortSignal.timeout(10_000),
-        cache: "no-store",
-      });
-      delivered = response.ok;
-      if (!response.ok) {
-        console.error(`Donation request: webhook returned ${response.status}`);
-      }
-    } catch (error) {
-      console.error("Donation request: webhook delivery failed", error);
-    }
-  }
+  const alert = await notifySubmission("donation", entry);
+  const delivered = alert.sent;
 
   if (!stored && !delivered) {
     return NextResponse.json(

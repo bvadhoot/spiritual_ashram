@@ -70,6 +70,105 @@ export function messagingProviderLabel(): string {
   return "Not configured";
 }
 
+export type SubmissionKind = "contact" | "book-order" | "donation";
+
+const SUBMISSION_SUBJECTS: Record<SubmissionKind, string> = {
+  contact: "New message from the ashram website",
+  "book-order": "New book order from the ashram website",
+  donation: "New donation pledge from the ashram website",
+};
+
+const SUBMISSION_WEBHOOK_ENV: Record<SubmissionKind, readonly string[]> = {
+  contact: ["CONTACT_WEBHOOK_URL", "NOTIFICATION_WEBHOOK_URL"],
+  "book-order": [
+    "BOOK_ORDER_WEBHOOK_URL",
+    "CONTACT_WEBHOOK_URL",
+    "NOTIFICATION_WEBHOOK_URL",
+  ],
+  donation: [
+    "DONATION_WEBHOOK_URL",
+    "CONTACT_WEBHOOK_URL",
+    "NOTIFICATION_WEBHOOK_URL",
+  ],
+};
+
+function submissionWebhook(kind: SubmissionKind): string {
+  for (const name of SUBMISSION_WEBHOOK_ENV[kind]) {
+    const value = process.env[name];
+    if (value) return value;
+  }
+  return "";
+}
+
+function field(entry: Record<string, unknown>, key: string): string {
+  const value = entry[key];
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function submissionSummary(
+  kind: SubmissionKind,
+  entry: Record<string, unknown>,
+): string {
+  const name = field(entry, "name");
+  const contact = field(entry, "phone") || field(entry, "email");
+
+  if (kind === "contact") {
+    return [name, contact, field(entry, "subject")].filter(Boolean).join(" \u00b7 ");
+  }
+
+  if (kind === "book-order") {
+    return [name, field(entry, "bookTitle"), contact]
+      .filter(Boolean)
+      .join(" \u00b7 ");
+  }
+
+  const amount = typeof entry.amount === "number" ? `\u20b9${entry.amount}` : "";
+  return [name, field(entry, "designation"), amount, contact]
+    .filter(Boolean)
+    .join(" \u00b7 ");
+}
+
+export function isSubmissionAlertConfigured(kind: SubmissionKind): boolean {
+  return Boolean(submissionWebhook(kind));
+}
+
+/**
+ * Alerts the ashram office about a form submission.
+ *
+ * The payload is flat and human readable on purpose: any webhook receiver
+ * (Zapier, Make, n8n or a Google Apps Script) can forward `alertSubject` and
+ * `text` as an email without mapping individual fields first.
+ */
+export async function notifySubmission(
+  kind: SubmissionKind,
+  entry: Record<string, unknown>,
+): Promise<{ sent: boolean; configured: boolean }> {
+  const url = submissionWebhook(kind);
+  const alertSubject = SUBMISSION_SUBJECTS[kind];
+  const summary = submissionSummary(kind, entry);
+
+  if (!url) {
+    await logNotification({
+      type: `${kind}-received`,
+      status: "webhook-not-configured",
+      alertSubject,
+      summary,
+      reference: field(entry, "reference"),
+    });
+    return { sent: false, configured: false };
+  }
+
+  const sent = await postWebhook(url, {
+    ...entry,
+    type: kind,
+    alertSubject,
+    summary,
+    text: `${alertSubject}\n${summary}`,
+  });
+
+  return { sent, configured: true };
+}
+
 async function logNotification(payload: Record<string, unknown>) {
   // Workers only has an ephemeral filesystem, so send this to the log stream.
   if (isCloudflareRuntime()) {
@@ -89,8 +188,10 @@ async function logNotification(payload: Record<string, unknown>) {
   }
 }
 
-async function postWebhook(payload: Record<string, unknown>): Promise<boolean> {
-  const url = process.env.NOTIFICATION_WEBHOOK_URL;
+async function postWebhook(
+  url: string,
+  payload: Record<string, unknown>,
+): Promise<boolean> {
   if (!url) return false;
 
   try {
@@ -195,7 +296,7 @@ export async function sendMessage(
   }
 
   if (isNotificationWebhookConfigured()) {
-    const ok = await postWebhook({
+    const ok = await postWebhook(process.env.NOTIFICATION_WEBHOOK_URL ?? "", {
       type: "message",
       channel,
       to,
@@ -329,7 +430,7 @@ export async function notifyEventPublished(
   }
 
   if (isNotificationWebhookConfigured()) {
-    const ok = await postWebhook({
+    const ok = await postWebhook(process.env.NOTIFICATION_WEBHOOK_URL ?? "", {
       type: "event-published",
       audience: "members",
       event,

@@ -4,6 +4,7 @@ import { clientIp, isSameOrigin, rateLimit } from "@/lib/rate-limit";
 import { createReference } from "@/lib/utils";
 import { site } from "@/lib/site";
 import { saveSubmission } from "@/lib/storage";
+import { notifySubmission } from "@/lib/notifications";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -76,28 +77,8 @@ export async function POST(request: Request) {
 
   const stored = await saveSubmission("contact", entry);
 
-  let delivered = false;
-  const webhook = process.env.CONTACT_WEBHOOK_URL;
-  if (webhook) {
-    try {
-      const response = await fetch(webhook, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          source: site.shortName,
-          ...entry,
-        }),
-        signal: AbortSignal.timeout(10_000),
-        cache: "no-store",
-      });
-      delivered = response.ok;
-      if (!response.ok) {
-        console.error(`Contact form: webhook returned ${response.status}`);
-      }
-    } catch (error) {
-      console.error("Contact form: webhook delivery failed", error);
-    }
-  }
+  const alert = await notifySubmission("contact", entry);
+  const delivered = alert.sent;
 
   if (!stored && !delivered) {
     return NextResponse.json(

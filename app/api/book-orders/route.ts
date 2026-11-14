@@ -5,6 +5,7 @@ import { createReference } from "@/lib/utils";
 import { getBook } from "@/lib/books";
 import { site } from "@/lib/site";
 import { saveSubmission } from "@/lib/storage";
+import { notifySubmission } from "@/lib/notifications";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -81,30 +82,8 @@ export async function POST(request: Request) {
 
   const stored = await saveSubmission("book-order", entry);
 
-  let delivered = false;
-  const webhook =
-    process.env.BOOK_ORDER_WEBHOOK_URL ?? process.env.CONTACT_WEBHOOK_URL;
-  if (webhook) {
-    try {
-      const response = await fetch(webhook, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          source: site.shortName,
-          type: "book-order",
-          ...entry,
-        }),
-        signal: AbortSignal.timeout(10_000),
-        cache: "no-store",
-      });
-      delivered = response.ok;
-      if (!response.ok) {
-        console.error(`Book order: webhook returned ${response.status}`);
-      }
-    } catch (error) {
-      console.error("Book order: webhook delivery failed", error);
-    }
-  }
+  const alert = await notifySubmission("book-order", entry);
+  const delivered = alert.sent;
 
   if (!stored && !delivered) {
     return NextResponse.json(

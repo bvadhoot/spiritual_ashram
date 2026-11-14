@@ -106,16 +106,36 @@ Copy `.env.example` to `.env.local` and fill in what you need. Nothing is requir
 | Variable | Purpose |
 | --- | --- |
 | `NEXT_PUBLIC_SITE_URL` | Canonical/OG/sitemap base URL. Set to the live domain before deploying. |
-| `CONTACT_WEBHOOK_URL` | Optional JSON endpoint for enquiries (Zapier, Make, Apps Script, CRM). Without it, enquiries are appended to `data/contact-submissions.ndjson`. |
-| `DONATION_WEBHOOK_URL` | Optional JSON endpoint for giving requests. Falls back to `CONTACT_WEBHOOK_URL`. |
-| `BOOK_ORDER_WEBHOOK_URL` | Optional JSON endpoint for book requests. Falls back to `CONTACT_WEBHOOK_URL`. |
+| `CONTACT_WEBHOOK_URL` | JSON endpoint that alerts the office about enquiries (Zapier, Make, n8n, Apps Script, CRM). Without it, submissions are stored but nobody is notified. |
+| `DONATION_WEBHOOK_URL` | Overrides `CONTACT_WEBHOOK_URL` for giving requests. |
+| `BOOK_ORDER_WEBHOOK_URL` | Overrides `CONTACT_WEBHOOK_URL` for book requests. |
 | `ADMIN_EMAIL` | Office email for `/admin`. Defaults to the public office email. |
 | `ADMIN_PASSWORD` | Strong password for `/admin`. Required to enable the studio. |
 | `ADMIN_SESSION_SECRET` | Random 32-byte hex secret for signing admin sessions. Required. |
 | `BLOB_READ_WRITE_TOKEN` | Vercel Blob token for persistent events, uploads and the private member list. Required on Vercel. |
+| `R2_PUBLIC_URL` | Public URL of the `ASHRAM_MEDIA` bucket. Required on Cloudflare Workers so uploaded photographs resolve. |
 | `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` | Optional Twilio credentials for direct SMS and WhatsApp receipts. |
 | `TWILIO_SMS_FROM` / `TWILIO_WHATSAPP_FROM` | Optional Twilio sender numbers. WhatsApp senders use the `whatsapp:` prefix. |
 | `NOTIFICATION_WEBHOOK_URL` | Optional JSON webhook for message and event-broadcast delivery when Twilio is not configured. |
+
+### Alerts when a form arrives
+
+Every submission is stored first, then posted to the webhook. The payload carries `alertSubject`, `summary` and a plain `text` line alongside the raw fields, so a receiver can forward it as an email without mapping anything first.
+
+The quickest free setup needs no third-party account — a Google Apps Script web app:
+
+```js
+function doPost(e) {
+  MailApp.sendEmail(
+    "office@example.org",            // the inbox that should be alerted
+    "New message from the ashram website",
+    e.postData.contents,
+  );
+  return ContentService.createTextOutput("ok");
+}
+```
+
+Deploy it as a web app with access set to "Anyone", then set `CONTACT_WEBHOOK_URL` to the deployment URL. Any endpoint that accepts a JSON POST works the same way.
 
 ### Giving and books
 
@@ -140,6 +160,12 @@ Open `/admin` (also linked discreetly in the footer). The office signs in with `
 
 Create a Vercel Blob store, connect it to the project and set `BLOB_READ_WRITE_TOKEN`. Without it, Vercel cannot persist admin images, events or the member list; the admin shows a setup warning. Local development silently uses `data/` and `public/uploads/` instead.
 
+### Persistent storage on Cloudflare Workers
+
+Two R2 buckets are bound in `wrangler.jsonc`. `ASHRAM_DATA` stays private: it holds events, festivals, gallery metadata, the member list and every form submission, including phone numbers. `ASHRAM_MEDIA` is public and serves uploaded photographs from `R2_PUBLIC_URL`. Do not make `ASHRAM_DATA` public.
+
+`lib/storage.ts` tries R2 first, then Vercel Blob, then the local filesystem, so the same build runs on either host.
+
 ## Deploying
 
 The site is a standard Next.js app, so it deploys as-is to Vercel, Netlify, or any Node host:
@@ -151,6 +177,18 @@ The site is a standard Next.js app, so it deploys as-is to Vercel, Netlify, or a
 5. On self-hosted servers, back up `data/` — it holds contact submissions and private member data.
 
 If you deploy to a static-only host, the contact, donation and book-order endpoints need a separate backend; the marketing pages themselves export fine.
+
+### Cloudflare Workers
+
+```bash
+npx wrangler login
+npx wrangler r2 bucket create ashram-data
+npx wrangler r2 bucket create ashram-media
+npx wrangler secret put ADMIN_EMAIL      # repeat for ADMIN_PASSWORD and ADMIN_SESSION_SECRET
+npm run deploy:worker
+```
+
+Then enable public access on `ashram-media` only, set `R2_PUBLIC_URL` to that domain and `NEXT_PUBLIC_SITE_URL` to the final URL, and redeploy.
 
 ---
 
