@@ -17,6 +17,14 @@ export async function addStoredGalleryImage(
   ]);
 }
 
+export async function deleteStoredGalleryImage(id: string): Promise<boolean> {
+  const stored = await getStoredGalleryImages();
+  const next = stored.filter((item) => item.id !== id);
+  if (next.length === stored.length) return false;
+  await writePublicJson(STORED_GALLERY_FILE, next);
+  return true;
+}
+
 export async function getAllGalleryImages(): Promise<GalleryImage[]> {
   const stored = await getStoredGalleryImages();
   const seen = new Set<string>();

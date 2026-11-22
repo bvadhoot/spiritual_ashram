@@ -342,7 +342,7 @@ export function AdminFestivalManager({
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Link
-            href={`/admin?month=${previousMonth}`}
+            href={`/admin?tab=calendar&month=${previousMonth}`}
             aria-label="Previous month"
             className="flex h-8 w-8 items-center justify-center rounded-full border border-maroon/15 text-maroon transition hover:border-gold hover:bg-gold-pale/40"
           >
@@ -352,7 +352,7 @@ export function AdminFestivalManager({
             {monthLabel}
           </span>
           <Link
-            href={`/admin?month=${nextMonth}`}
+            href={`/admin?tab=calendar&month=${nextMonth}`}
             aria-label="Next month"
             className="flex h-8 w-8 items-center justify-center rounded-full border border-maroon/15 text-maroon transition hover:border-gold hover:bg-gold-pale/40"
           >

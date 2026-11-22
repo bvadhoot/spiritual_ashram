@@ -48,7 +48,7 @@ const formation = [
   {
     title: "Education & scholarship",
     description:
-      "Schooling in Ratnapur and at N.F.H.S. Bidar, a B.A. at Kaviratna Kalidasa College, a laboratory technician course at Nittur, and an M.A. in Kannada and Philosophy with a gold medal.",
+      "Schooling in Ratnapur and at N.F.H.S. Bidar, a B.A. at Kaviratna Kalidasa College, a laboratory technician course at Nittur, an M.A. in Kannada and Philosophy with a gold medal, and the UPSC preliminary examination in New Delhi.",
     icon: GraduationCap,
   },
   {
@@ -101,27 +101,87 @@ const ashrams = [
 const avadhootaSyllables = [
   {
     syllable: "A",
-    title: "Absolute freedom",
+    title: "Absolute freedom and eternal bliss",
     description:
-      "Liberation from worldly desires and attachments, and abiding in uninterrupted peace and divine bliss.",
+      "Complete liberation from worldly desires, expectations and attachments. The realised soul remains established in spiritual consciousness, experiencing uninterrupted peace, contentment and divine bliss.",
   },
   {
     syllable: "VA",
-    title: "Inner equanimity",
+    title: "Freedom from desires and inner equanimity",
     description:
-      "Freedom from craving and mastery of the restless mind — undisturbed by the past or anxiety for the future.",
+      "The ending of worldly craving and complete mastery of the restless mind. Neither dwelling on the past nor anxious about the future, the Avadhoota meets every experience with serenity and awareness.",
   },
   {
     syllable: "DHU",
     title: "Purity of consciousness",
     description:
-      "The mind free of ignorance, ego and attachment, naturally established in awareness of the Supreme Self.",
+      "Complete inner purification and freedom from mental impurities. Though the body may be covered with dust or sacred ashes, the mind remains free of ignorance, ego and attachment.",
   },
   {
     syllable: "TA",
-    title: "Realisation of truth",
+    title: "Realisation of the absolute truth",
     description:
-      "The dissolution of the sense of separation, and absorption in the oneness of existence.",
+      "Unwavering absorption in the Absolute Truth. The sense of separation between the individual soul and the Supreme Consciousness dissolves into the oneness of existence.",
+  },
+];
+
+const mission = [
+  {
+    title: "Inner purity and character",
+    description:
+      "Cultivating inner purity, moral character and respect for parents and elders, so that spiritual practice shapes the whole of life.",
+    icon: Leaf,
+  },
+  {
+    title: "Youth and discipline",
+    description:
+      "Encouraging young people to build lives on discipline, education and responsibility, and to free themselves from destructive habits.",
+    icon: GraduationCap,
+  },
+  {
+    title: "Culture and family",
+    description:
+      "Inspiring families to nurture children with ethical values, and to keep the cultural traditions of the land alive in the home.",
+    icon: HeartHandshake,
+  },
+  {
+    title: "Unity and harmony",
+    description:
+      "Guiding society towards peaceful coexistence, mutual respect, brotherhood and national unity, beyond every distinction.",
+    icon: Sun,
+  },
+];
+
+const shubhechha = [
+  {
+    title: "Seeking the guidance of a Guru",
+    description:
+      "A sincere longing arises to approach an enlightened master for Jnana and Tattva, and to find answers to the great questions: Who am I? What is the true purpose of human life? What is the nature of the Supreme Reality?",
+  },
+  {
+    title: "The desire for liberation",
+    description:
+      "Recognising the limits of material existence, a powerful aspiration takes root: to seek the eternal truth and be released from the cycle of birth and death.",
+  },
+  {
+    title: "The impermanence of worldly bonds",
+    description:
+      "The seeker comes to see that possessions and relationships change and pass. This realisation does not breed indifference, but a selfless love free of possessive attachment.",
+  },
+  {
+    title: "Detachment and self-control",
+    description:
+      "Through Vairagya the senses are steadied and desires regulated, so that the mind rests in spiritual contemplation rather than in restless craving.",
+  },
+  {
+    title: "The limits of worldly happiness",
+    description:
+      "Material pleasures are understood to be temporary and unable to give lasting peace. The search turns towards a deeper and more enduring fulfilment.",
+  },
+  {
+    title: "Ego, humility and right action",
+    description:
+      "Humility, compassion and truthfulness become part of daily life, and virtuous action performed without selfish expectation purifies the mind.",
   },
 ];
 
@@ -221,14 +281,6 @@ export default function AboutPage() {
               {guruBio.map((paragraph) => (
                 <p key={paragraph}>{paragraph}</p>
               ))}
-              <p>
-                Alongside his spiritual work he practises homeopathy, offering
-                care and guidance to devotees. His mission reaches beyond the
-                discourse hall: he guides parents in raising children with
-                strong moral values, encourages young people to overcome
-                harmful habits, and inspires society towards unity,
-                brotherhood, compassion and patriotism.
-              </p>
             </div>
 
             <blockquote className="mt-8 rounded-2xl border border-gold/35 bg-cream-100/80 p-6">
@@ -461,6 +513,49 @@ export default function AboutPage() {
         </div>
       </section>
 
+      <section
+        className="section-pad bg-cream"
+        aria-labelledby="vision-heading"
+      >
+        <div className="container-site">
+          <Reveal>
+            <SectionHeading
+              eyebrow="Vision & Mission"
+              title="Spirituality That Reaches the Household"
+              headingId="vision-heading"
+              description="His mission rests on a simple conviction: genuine spiritual progress must transform the individual and, through them, the welfare of society."
+            />
+          </Reveal>
+
+          <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {mission.map((item, index) => (
+              <Reveal key={item.title} delay={index * 0.05}>
+                <article className="h-full rounded-2xl border border-maroon/10 bg-cream-100/40 p-6 transition-colors duration-300 hover:border-gold/50">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-full border border-gold/40 bg-gold-pale/40 text-maroon">
+                    <item.icon className="h-4 w-4" aria-hidden="true" />
+                  </span>
+                  <h3 className="mt-5 text-[1.08rem] leading-snug">
+                    {item.title}
+                  </h3>
+                  <p className="mt-2.5 text-[0.8rem] leading-[1.8] text-ink-soft">
+                    {item.description}
+                  </p>
+                </article>
+              </Reveal>
+            ))}
+          </div>
+
+          <Reveal delay={0.15}>
+            <p className="mx-auto mt-10 max-w-3xl text-center text-[0.84rem] leading-[1.9] text-ink-soft">
+              Through his discourses, literary contributions, meditation
+              programmes and humanitarian initiatives, he continues to promote
+              the timeless values of truth, compassion, devotion and universal
+              harmony.
+            </p>
+          </Reveal>
+        </div>
+      </section>
+
       <section className="relative overflow-hidden bg-maroon-deep py-16 text-cream sm:py-20">
         <div
           className="mandala-field absolute inset-0 opacity-40"
@@ -495,10 +590,70 @@ export default function AboutPage() {
             ))}
           </div>
 
-          <div className="mt-10 flex justify-center">
-            <Button href="/teachings" variant="gold">
-              Read the Seven Stages
-            </Button>
+        </div>
+      </section>
+
+      <section
+        className="section-pad bg-cream"
+        aria-labelledby="seven-stages-heading"
+      >
+        <div className="container-site">
+          <Reveal>
+            <SectionHeading
+              eyebrow="Sapta Jnana Bhumikas"
+              title="The Seven Stages of Self-Realisation"
+              headingId="seven-stages-heading"
+              description="Jnana Yoga describes the inward journey as seven progressive stages — a gradual transformation of consciousness that begins with a sincere longing for knowledge and matures into the highest realisation."
+            />
+          </Reveal>
+
+          <div className="mt-14 grid gap-6 lg:grid-cols-[0.85fr_1.15fr] lg:gap-12">
+            <Reveal>
+              <article className="h-full rounded-2xl border border-gold/35 bg-cream-100/70 p-7">
+                <span className="flex h-11 w-11 items-center justify-center rounded-full border border-gold/40 bg-gold-pale/40 text-maroon">
+                  <Flame className="h-4 w-4" aria-hidden="true" />
+                </span>
+                <p className="mt-5 text-[0.6rem] font-semibold tracking-[0.22em] text-gold uppercase">
+                  Stage one
+                </p>
+                <h3 className="mt-2 font-serif text-2xl text-maroon">
+                  Shubhechha
+                </h3>
+                <p className="mt-1 text-[0.66rem] font-semibold tracking-[0.14em] text-ink-soft/70 uppercase">
+                  The auspicious desire for knowledge
+                </p>
+                <p className="mt-4 text-[0.84rem] leading-[1.9] text-ink-soft">
+                  Shubhechha is the first stage of spiritual awakening, in which
+                  a sincere desire for divine knowledge, self-realisation and
+                  liberation arises within the individual. The seeker begins to
+                  recognise the temporary nature of worldly pleasures, and
+                  turns towards the eternal truth.
+                </p>
+              </article>
+            </Reveal>
+
+            <Reveal delay={0.06}>
+              <ul className="space-y-4">
+                {shubhechha.map((item) => (
+                  <li
+                    key={item.title}
+                    className="flex gap-4 rounded-xl border border-maroon/10 bg-cream p-5"
+                  >
+                    <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-gold/40 bg-gold-pale/40 text-maroon">
+                      <Sparkles className="h-3 w-3" aria-hidden="true" />
+                    </span>
+                    <div>
+                      <p className="text-[0.85rem] font-medium text-maroon">
+                        {item.title}
+                      </p>
+                      <p className="mt-1 text-[0.78rem] leading-[1.8] text-ink-soft">
+                        {item.description}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </Reveal>
           </div>
         </div>
       </section>

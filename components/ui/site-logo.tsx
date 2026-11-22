@@ -19,7 +19,7 @@ export function SiteLogo({ tone = "dark", className, compact = false }: SiteLogo
         <span className="absolute inset-0 rounded-full bg-gradient-to-br from-gold-light via-gold to-gold-warm opacity-70 blur-[1px]" aria-hidden="true" />
         <span className="relative block h-full w-full overflow-hidden rounded-full border border-cream/40">
           <Image
-            src="/images/guru-logo-v5.jpg"
+            src="/images/guru-logo-v6.webp"
             alt="Portrait of Poojya Sri Dr. Basavalinga Avadhoota"
             fill
             sizes="56px"

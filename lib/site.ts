@@ -3,7 +3,7 @@ export const site = {
   shortName: "Sri Basavalinga Avadhoota Ashram",
   ashramName: "Mallayyagiri Ashram",
   teluguName: "శ్రీ బసవలింగ అవధూత ఆశ్రమం",
-  teluguPlace: "ముల్లాజ్గిరి",
+  teluguPlace: "మలయగిరి",
   tagline: "A Divine Abode for Peace, Devotion and Spiritual Transformation",
   description:
     "The official home of Sri Dr. Basavalinga Avadhoota and the Mallayyagiri Ashram — a living tradition of satsang, sadhana, annadanam and service in Jharasangam, Telangana.",

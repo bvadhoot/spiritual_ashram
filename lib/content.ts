@@ -28,8 +28,8 @@ export const highlights = [
     title: "Spiritual Discourses",
     description:
       "Gurudev's discourses draw thousands each Pournami, offering timeless wisdom in everyday language.",
-    image: "/images/highlight-discourse.jpg",
-    alt: "Devotees gathered closely around Sri Dr. Basavalinga Avadhoota",
+    image: "/images/highlight-discourse.webp",
+    alt: "Sri Dr. Basavalinga Avadhoota addressing a large gathering of devotees beneath the ashram pandal",
     icon: "discourse" as IconKey,
     href: "/teachings",
   },
@@ -77,9 +77,11 @@ export const featureStrip = [
 ];
 
 export const guruBio = [
-  "Sri Dr. Basavalinga Avadhoota is the Peethadhikari of the Mallayyagiri, Basavakalyan and Degalmadi Ashrams. Born Basavaraj Mulge on 21 June 1976 in Ratnapur, a village in Nyalkal Mandal of Sangareddy District, Telangana, he was the third son of Sri Rachappa Mulge and Smt. Bandemma, raised in a devout Lingayat family that had received spiritual initiation.",
-  "He completed his early schooling in his native village and his secondary and pre-university education at N.F.H.S. in Bidar, before earning a Bachelor of Arts degree at Kaviratna Kalidasa College. A laboratory technician course at Nittur in Bhalki Taluk followed, and he went on to complete postgraduate studies in Kannada and Philosophy at Karnatak University, Dharwad, where he was awarded a gold medal. He also appeared for the preliminary examination of the UPSC in New Delhi.",
-  "His search for spiritual knowledge took him to the Himalayas for years of penance, and to the pilgrimage centres of Kashi, Srisailam, Rishikesh and Badrinath. He received Jnana Deeksha from Paramahamsa Pagal Baba, and in 2006 settled at Mallayyagiri, between Kuppanagar and Chillapalli. What began as a quiet place of sadhana now receives more than 10,000 devotees on every Pournami.",
+  "Poojya Sri Dr. Basavalinga Avadhoota is the Peethadhikari of the Mallayyagiri, Basavakalyan and Degalmadi Ashrams — a revered spiritual leader, an inspiring orator, a compassionate humanitarian and a dedicated guardian of India's cultural and spiritual heritage. Through his wisdom and selfless service he has sown the seeds of spirituality, nurtured moral values and illuminated the lives of countless devotees.",
+  "Born Basavaraj Mulge on 21 June 1976 in Ratnapur, a village in Nyalkal Mandal of Sangareddy District, Telangana, he was the third son of Sri Rachappa Mulge and Smt. Bandemma, raised in a devout Lingayat family that had received spiritual initiation. Even during his college years at Kaviratna Kalidasa College he was drawn to philosophical inquiry, meditation and the deeper purpose of human existence.",
+  "He completed his early schooling in his native village and his secondary and pre-university education at N.F.H.S. in Bidar. A laboratory technician course at Nittur in Bhalki Taluk gave him practical knowledge, and he went on to complete postgraduate studies in Kannada and Philosophy at Karnatak University, Dharwad, where he was awarded a gold medal. He also appeared for the preliminary examination of the UPSC in New Delhi.",
+  "Following his graduation he undertook an intense spiritual journey in search of divine wisdom, performing penance in the Himalayas and visiting Kashi, Srisailam, Rishikesh and Badrinath. He received Jnana Deeksha from his revered Guru, Paramahamsa Pagal Baba, and in 2006 settled at Mallayyagiri, between Kuppanagar and Chillapalli villages. What began as a quiet place of sadhana now receives more than 10,000 devotees on every Pournami.",
+  "His mission extends far beyond spiritual discourses. He guides parents in raising children with strong moral values, encourages young people to overcome harmful habits, promotes the importance of culture and education, and inspires society to embrace unity, brotherhood, compassion and patriotism. A practitioner of homeopathy, he has also extended care and guidance to countless devotees who have placed their faith in him.",
 ];
 
 export const guruQuote = {
@@ -202,13 +204,13 @@ export const literaryWorks = [
   {
     title: "The Twenty-Four Avatars of Lord Dattatreya",
     description:
-      "A study of the twenty-four avatars of Lord Dattatreya and the timeless wisdom of the Dattatreya tradition.",
+      "A study of the twenty-four avatars of Lord Dattatreya, guiding readers towards spiritual knowledge, devotion, righteousness and the path of self-realisation.",
     icon: "book" as IconKey,
   },
   {
     title: "Akkamahadevi Yoganga Trividhi",
     description:
-      "An exploration of Jaganmatha Akkamahadevi's teachings and the spiritual heritage of the Sharana tradition.",
+      "An exploration of Jaganmatha Akkamahadevi's sacred teachings and the journey of the individual soul towards union with the Supreme Consciousness.",
     icon: "book" as IconKey,
   },
 ];

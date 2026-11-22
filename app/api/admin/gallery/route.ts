@@ -4,9 +4,14 @@ import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { validateGalleryMeta } from "@/lib/admin-validation";
 import type { GalleryImage } from "@/lib/gallery";
-import { addStoredGalleryImage } from "@/lib/gallery-store";
+import {
+  addStoredGalleryImage,
+  deleteStoredGalleryImage,
+  getStoredGalleryImages,
+} from "@/lib/gallery-store";
 import { isSameOrigin } from "@/lib/rate-limit";
 import {
+  deleteUpload,
   saveUpload,
   StorageNotConfiguredError,
 } from "@/lib/storage";
@@ -129,6 +134,66 @@ export async function POST(request: Request) {
     console.error("Admin gallery: upload failed", error);
     return NextResponse.json(
       { ok: false, error: "The photograph could not be saved right now." },
+      { status: 500 },
+    );
+  }
+}
+
+export async function DELETE(request: Request) {
+  const session = await getAdminSession();
+  if (!session) {
+    return NextResponse.json(
+      { ok: false, error: "Please sign in to the admin studio." },
+      { status: 401 },
+    );
+  }
+
+  if (!isSameOrigin(request)) {
+    return NextResponse.json(
+      { ok: false, error: "This request was blocked for security reasons." },
+      { status: 403 },
+    );
+  }
+
+  const id = new URL(request.url).searchParams.get("id") ?? "";
+  if (!id) {
+    return NextResponse.json(
+      { ok: false, error: "Choose the photograph you want to remove." },
+      { status: 400 },
+    );
+  }
+
+  try {
+    const stored = await getStoredGalleryImages();
+    const photo = stored.find((image) => image.id === id);
+    if (!photo) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error:
+            "That photograph belongs to the built-in gallery, so it cannot be removed here.",
+        },
+        { status: 404 },
+      );
+    }
+
+    await deleteStoredGalleryImage(id);
+    await deleteUpload(photo.src);
+
+    revalidatePath("/gallery");
+    revalidatePath("/");
+
+    return NextResponse.json({ ok: true, id });
+  } catch (error) {
+    if (error instanceof StorageNotConfiguredError) {
+      return NextResponse.json(
+        { ok: false, error: error.message },
+        { status: 503 },
+      );
+    }
+    console.error("Admin gallery: delete failed", error);
+    return NextResponse.json(
+      { ok: false, error: "The photograph could not be removed right now." },
       { status: 500 },
     );
   }

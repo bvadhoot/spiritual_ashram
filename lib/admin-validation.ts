@@ -1,5 +1,7 @@
+import type { AlertChannel } from "@/lib/alert-recipients";
 import type { EventCategory } from "@/lib/events";
 import type { GalleryCategory } from "@/lib/gallery";
+import { normalizePhone } from "@/lib/phone";
 import type { FieldErrors, ValidationResult } from "@/lib/validation";
 
 export const ADMIN_EVENT_CATEGORIES: EventCategory[] = [
@@ -87,6 +89,50 @@ export function validateAdminEvent(
     !data.image.startsWith("https://")
   ) {
     errors.image = "Please choose an image from the gallery.";
+  }
+
+  return Object.keys(errors).length > 0
+    ? { ok: false, errors }
+    : { ok: true, data };
+}
+
+export interface AdminRecipientInput {
+  name: string;
+  phone: string;
+  channel: AlertChannel;
+}
+
+const ALERT_CHANNEL_VALUES: AlertChannel[] = ["sms", "whatsapp", "both"];
+
+/** Validates a phone number added to the office alert list. */
+export function validateAlertRecipient(
+  input: unknown,
+): ValidationResult<AdminRecipientInput> {
+  const record =
+    typeof input === "object" && input !== null
+      ? (input as Record<string, unknown>)
+      : {};
+
+  const data: AdminRecipientInput = {
+    name: text(record.name).slice(0, 80),
+    phone: normalizePhone(text(record.phone)),
+    channel: text(record.channel) as AlertChannel,
+  };
+
+  const errors: FieldErrors<AdminRecipientInput> = {};
+
+  if (data.name.length < 2) {
+    errors.name = "Give this number a label, for example Ashram office.";
+  }
+
+  const digits = data.phone.replace(/\D/g, "");
+  if (digits.length < 10 || digits.length > 15) {
+    errors.phone =
+      "Enter a full phone number, for example +91 98765 43210 or 98765 43210.";
+  }
+
+  if (!ALERT_CHANNEL_VALUES.includes(data.channel)) {
+    errors.channel = "Choose SMS, WhatsApp or both.";
   }
 
   return Object.keys(errors).length > 0

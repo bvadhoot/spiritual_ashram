@@ -2,6 +2,7 @@ import { appendFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 import type { AshramEvent } from "@/lib/events";
 import { formatEventDateRange } from "@/lib/events";
+import { getActiveAlertRecipients } from "@/lib/alert-recipients";
 import { getMembers, type Member } from "@/lib/members";
 import { isCloudflareRuntime } from "@/lib/storage";
 import { maskPhone, normalizePhone } from "@/lib/phone";
@@ -386,12 +387,20 @@ export interface EventBroadcastResult {
   failed: number;
   queued: boolean;
   provider: "twilio" | "webhook" | "none";
+  /** Office numbers on the alert list, sent and failed counts. */
+  recipients: number;
+  recipientsSent: number;
+  recipientsFailed: number;
 }
 
 export async function notifyEventPublished(
   event: AshramEvent,
 ): Promise<EventBroadcastResult> {
-  const members = await getMembers();
+  const [members, recipients] = await Promise.all([
+    getMembers(),
+    getActiveAlertRecipients(),
+  ]);
+
   const link = `${site.url}/events#${event.slug}`;
   const message = [
     `New at ${site.shortName}:`,
@@ -400,7 +409,16 @@ export async function notifyEventPublished(
     "Reply STOP to opt out.",
   ].join(" ");
 
-  if (members.length > 0 && isTwilioConfigured()) {
+  const officeMessage = [
+    `Office alert — a new event was published at ${site.shortName}:`,
+    `${event.title} — ${formatEventDateRange(event)} at ${event.location}.`,
+    `Details: ${link}`,
+  ].join(" ");
+
+  if (
+    isTwilioConfigured() &&
+    (members.length > 0 || recipients.length > 0)
+  ) {
     let sent = 0;
     let failed = 0;
     const list = members.slice(0, 100);
@@ -420,22 +438,55 @@ export async function notifyEventPublished(
       else failed += 1;
     }
 
+    let recipientsSent = 0;
+    let recipientsFailed = 0;
+
+    for (const recipient of recipients) {
+      const channels: MessageChannel[] =
+        recipient.channel === "both"
+          ? ["sms", "whatsapp"]
+          : [recipient.channel];
+
+      const results = await Promise.all(
+        channels.map((channel) =>
+          sendMessage(channel, recipient.phone, officeMessage, {
+            type: "event-published",
+            audience: "office",
+            recipientId: recipient.id,
+            eventId: event.id,
+          }),
+        ),
+      );
+
+      if (results.some((result) => result.ok)) recipientsSent += 1;
+      else recipientsFailed += 1;
+    }
+
     return {
       members: list.length,
       sent,
       failed,
       queued: false,
       provider: "twilio",
+      recipients: recipients.length,
+      recipientsSent,
+      recipientsFailed,
     };
   }
 
   if (isNotificationWebhookConfigured()) {
     const ok = await postWebhook(process.env.NOTIFICATION_WEBHOOK_URL ?? "", {
       type: "event-published",
-      audience: "members",
+      audience: "members+office",
       event,
       message,
+      officeMessage,
       members: members.length,
+      officeRecipients: recipients.map((recipient) => ({
+        name: recipient.name,
+        phone: recipient.phone,
+        channel: recipient.channel,
+      })),
     });
     return {
       members: members.length,
@@ -443,14 +494,18 @@ export async function notifyEventPublished(
       failed: 0,
       queued: ok,
       provider: "webhook",
+      recipients: recipients.length,
+      recipientsSent: 0,
+      recipientsFailed: 0,
     };
   }
 
   await logNotification({
     type: "event-published",
-    audience: "members",
+    audience: "members+office",
     eventId: event.id,
     title: event.title,
+    recipients: recipients.length,
     status: "not-configured",
   });
 
@@ -460,5 +515,8 @@ export async function notifyEventPublished(
     failed: 0,
     queued: false,
     provider: "none",
+    recipients: recipients.length,
+    recipientsSent: 0,
+    recipientsFailed: 0,
   };
 }

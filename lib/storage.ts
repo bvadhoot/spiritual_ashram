@@ -1,4 +1,4 @@
-import { appendFile, mkdir, readFile, writeFile } from "node:fs/promises";
+import { appendFile, mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 const BLOB_TOKEN = process.env.BLOB_READ_WRITE_TOKEN;
@@ -28,6 +28,7 @@ type R2BucketLike = {
     },
   ): Promise<unknown>;
   get(key: string): Promise<R2ObjectLike | null>;
+  delete(key: string): Promise<void>;
 };
 
 /**
@@ -36,9 +37,16 @@ type R2BucketLike = {
  * through to the in-memory filesystem and disappear after the request.
  */
 export function isCloudflareRuntime(): boolean {
-  return (
+  if (
     typeof navigator !== "undefined" &&
     navigator.userAgent === "Cloudflare-Workers"
+  ) {
+    return true;
+  }
+  // workerd exposes WebSocketPair globally; neither Node nor Miniflare-in-dev does.
+  return (
+    typeof (globalThis as { WebSocketPair?: unknown }).WebSocketPair !==
+    "undefined"
   );
 }
 
@@ -55,6 +63,11 @@ let bindingProbe: Promise<Record<string, unknown> | null> | null = null;
 function cloudflareEnv(): Promise<Record<string, unknown> | null> {
   if (!bindingProbe) {
     bindingProbe = (async () => {
+      // `next dev` also receives a Miniflare-backed context from
+      // initOpenNextCloudflareForDev. Using it would move local content into
+      // .wrangler/state and out of data/, so only a real Worker uses R2.
+      if (!isCloudflareRuntime()) return null;
+
       try {
         const { getCloudflareContext } = await import("@opennextjs/cloudflare");
         const context = await getCloudflareContext({ async: true });
@@ -91,11 +104,12 @@ function localPath(filename: string, scope: LocalScope): string {
 }
 
 export class StorageNotConfiguredError extends Error {
-  constructor() {
+  constructor(message?: string) {
     super(
-      isCloudflareRuntime()
-        ? "Persistent storage is not configured. Bind an R2 bucket to ASHRAM_DATA in wrangler.jsonc so events, festivals and the member list survive deployments."
-        : "Persistent storage is not configured. Add BLOB_READ_WRITE_TOKEN to the Vercel project so uploaded images and events survive deployments.",
+      message ??
+        (isCloudflareRuntime()
+          ? "Persistent storage is not configured. Bind an R2 bucket to ASHRAM_DATA in wrangler.jsonc so events, festivals and the member list survive deployments."
+          : "Persistent storage is not configured. Add BLOB_READ_WRITE_TOKEN to the Vercel project so uploaded images and events survive deployments."),
     );
     this.name = "StorageNotConfiguredError";
   }
@@ -312,8 +326,8 @@ export async function saveUpload(file: File, filename: string): Promise<string> 
   const bucket = await mediaStore();
   if (bucket) {
     if (!R2_PUBLIC_URL) {
-      throw new Error(
-        "Upload storage is not configured. Set R2_PUBLIC_URL to the public domain of the ASHRAM_MEDIA bucket.",
+      throw new StorageNotConfiguredError(
+        "Photograph uploads need a public web address. Set R2_PUBLIC_URL to the public domain of the ASHRAM_MEDIA bucket and redeploy.",
       );
     }
     await bucket.put(`${UPLOAD_PREFIX}/${filename}`, await file.arrayBuffer(), {
@@ -347,6 +361,33 @@ export async function saveUpload(file: File, filename: string): Promise<string> 
     Buffer.from(await file.arrayBuffer()),
   );
   return `/uploads/${filename}`;
+}
+
+/**
+ * Removes an uploaded photograph. Deleting only the gallery record would leave
+ * the object behind, so the media store is cleaned up as well.
+ */
+export async function deleteUpload(src: string): Promise<void> {
+  const filename = src.split("?")[0]?.split("/").pop() ?? "";
+  if (!filename) return;
+
+  const bucket = await mediaStore();
+  if (bucket) {
+    try {
+      await bucket.delete(`${UPLOAD_PREFIX}/${filename}`);
+    } catch (error) {
+      console.error("Storage: could not delete uploaded file", error);
+    }
+    return;
+  }
+
+  if (isCloudflareRuntime()) return;
+
+  try {
+    await unlink(path.join(UPLOAD_DIR, filename));
+  } catch {
+    // Already gone, or never written to disk.
+  }
 }
 
 export type SubmissionKind = "contact" | "book-order" | "donation";

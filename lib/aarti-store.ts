@@ -21,6 +21,16 @@ export async function getAllAartiTracks(): Promise<AartiTrack[]> {
   return merged;
 }
 
+export async function deleteStoredAartiTrack(
+  videoId: string,
+): Promise<boolean> {
+  const stored = await getStoredAartiTracks();
+  const next = stored.filter((item) => item.videoId !== videoId);
+  if (next.length === stored.length) return false;
+  await writePublicJson(STORED_AARTI_FILE, next);
+  return true;
+}
+
 export async function addStoredAartiTrack(track: AartiTrack): Promise<void> {
   const stored = await getStoredAartiTracks();
   await writePublicJson(STORED_AARTI_FILE, [
