@@ -39,7 +39,7 @@ import { getMemberCount } from "@/lib/members";
 import { messagingProviderLabel } from "@/lib/notifications";
 import { festivalAdminView } from "@/lib/panchang";
 import { getStoredFestivals } from "@/lib/panchang/festival-store";
-import { storageMode } from "@/lib/storage";
+import { storageModeAsync } from "@/lib/storage";
 
 export const dynamic = "force-dynamic";
 
@@ -149,7 +149,7 @@ export default async function AdminPage({
     getAllAlertRecipients(),
   ]);
 
-  const storage = storageMode();
+  const storage = await storageModeAsync();
   const messaging = messagingProviderLabel();
 
   const params = await searchParams;

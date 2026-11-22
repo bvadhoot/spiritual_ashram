@@ -119,8 +119,17 @@ export function hasBlobStorage(): boolean {
   return Boolean(BLOB_TOKEN);
 }
 
-export function storageMode(): "r2" | "blob" | "local" | "unconfigured" {
-  if (isCloudflareRuntime()) return "r2";
+/**
+ * Reports whether this runtime can actually save data. It checks the binding,
+ * not the platform: a Worker deployed without R2 buckets runs on Cloudflare and
+ * still cannot save, so the admin banner must not claim storage is configured.
+ */
+export async function storageModeAsync(): Promise<
+  "r2" | "blob" | "local" | "unconfigured"
+> {
+  if (isCloudflareRuntime()) {
+    return (await dataStore()) ? "r2" : "unconfigured";
+  }
   if (BLOB_TOKEN) return "blob";
   return process.env.VERCEL ? "unconfigured" : "local";
 }
