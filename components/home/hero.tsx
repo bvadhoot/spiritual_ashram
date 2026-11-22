@@ -85,7 +85,7 @@ export function Hero() {
             className="font-telugu text-[clamp(1.8rem,3.6vw,3.35rem)] leading-[1.34] text-gold-light [text-shadow:0_2px_24px_rgba(0,0,0,0.35)]"
           >
             <span className="block">శ్రీ బసవలింగ అవధూత ఆశ్రమం,</span>
-            <span className="block">మలయగిరి</span>
+            <span className="block">మల్లయ్యగిరి</span>
           </h1>
 
           <p className="mt-4 font-serif text-[1.05rem] text-cream/85 sm:text-[1.18rem]">
